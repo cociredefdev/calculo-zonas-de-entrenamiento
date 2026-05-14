@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Zonas de Entrenamiento VAM</title>
+  <meta name="description" content="Calculadora estática para estimar zonas de entrenamiento en base a la VAM de un atleta." />
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --text: #18212f;
+      --muted: #667085;
+      --border: #e5e7eb;
+      --shadow: 0 18px 45px rgba(24, 33, 47, 0.10);
+      --radius: 24px;
+      --green: #b9dfa9;
+      --yellow: #ffe7a6;
+      --orange: #ffc996;
+      --rose: #ee9da2;
+      --coral: #de796c;
+      --primary: #1f6feb;
+      --primary-dark: #1457bd;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(31, 111, 235, 0.12), transparent 34rem),
+        radial-gradient(circle at bottom right, rgba(216, 58, 33, 0.10), transparent 32rem),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.86);
+      border: 1px solid rgba(229, 231, 235, 0.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .intro { padding: 36px; }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary);
+      background: rgba(31, 111, 235, 0.08);
+      border: 1px solid rgba(31, 111, 235, 0.16);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 0.86rem;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 0.98;
+      letter-spacing: -0.06em;
+    }
+
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      max-width: 62ch;
+    }
+
+    .input-panel {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    label {
+      font-weight: 800;
+      font-size: 0.95rem;
+    }
+
+    .hint {
+      margin-top: 6px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      border-radius: 16px;
+      padding: 16px 18px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      outline: none;
+      transition: 0.18s ease;
+    }
+
+    input:focus {
+      border-color: rgba(31, 111, 235, 0.7);
+      box-shadow: 0 0 0 4px rgba(31, 111, 235, 0.12);
+    }
+
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 0 20px;
+      background: var(--primary);
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.18s ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .error {
+      display: none;
+      color: #b42318;
+      background: #fff1f0;
+      border: 1px solid #ffd2cc;
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .mini { padding: 18px; }
+
+    .mini span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .mini strong {
+      font-size: 1.6rem;
+      letter-spacing: -0.03em;
+    }
+
+    .table-card { overflow: hidden; }
+
+    .table-title {
+      padding: 22px 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-title h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      letter-spacing: -0.03em;
+    }
+
+    .formula {
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: right;
+    }
+
+    .zones {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+    }
+
+    .zone {
+      min-height: 220px;
+      padding: 22px;
+      border-right: 1px solid rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .zone:last-child { border-right: 0; }
+
+    .zone-1 { background: var(--green); }
+    .zone-2 { background: var(--yellow); }
+    .zone-3 { background: var(--orange); }
+    .zone-4 { background: var(--rose); }
+    .zone-5 { background: var(--coral); }
+
+    .zone-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .zone-name {
+      font-weight: 900;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .percent {
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(255,255,255,0.8);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 900;
+    }
+
+    .pace {
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      line-height: 1;
+      letter-spacing: -0.08em;
+      font-weight: 950;
+      margin-top: 32px;
+    }
+
+    .unit {
+      font-weight: 900;
+      opacity: 0.75;
+      margin-top: 6px;
+    }
+
+    .seconds {
+      margin-top: 12px;
+      color: rgba(24, 33, 47, 0.72);
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    .zone-description {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(24, 33, 47, 0.18);
+      font-weight: 900;
+      font-size: 0.95rem;
+      line-height: 1.25;
+      color: rgba(24, 33, 47, 0.78);
+    }
+
+    .notes {
+      margin-top: 24px;
+      padding: 24px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .notes h3 {
+      color: var(--text);
+      margin: 0 0 8px;
+    }
+
+    .notes p { margin: 0; }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      margin-top: 28px;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero, .summary, .notes { grid-template-columns: 1fr; }
+      .zones { grid-template-columns: 1fr; }
+      .zone {
+        min-height: auto;
+        border-right: 0;
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+      }
+      .zone:last-child { border-bottom: 0; }
+      .table-title {
+        align-items: start;
+        flex-direction: column;
+      }
+      .formula { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="card intro">
+        <div class="eyebrow">Calculadora VAM</div>
+        <h1>Zonas de entrenamiento</h1>
+        <p class="lead">
+          Ingresá la VAM del atleta en formato minutos:segundos por kilómetro.
+          La página calcula automáticamente los ritmos para las zonas 1 a 5 usando los porcentajes 55%, 65%, 75%, 85% y 95%.
+        </p>
+      </div>
+
+      <div class="card input-panel">
+        <div>
+          <label for="vamInput">VAM atleta</label>
+          <div class="hint">Ejemplos válidos: 5:00, 4:30, 05:15</div>
+        </div>
+        <div class="input-row">
+          <input id="vamInput" value="5:00" inputmode="numeric" placeholder="5:00" aria-label="VAM atleta en minutos y segundos" />
+          <button id="resetBtn" type="button">Reset</button>
+        </div>
+        <div id="error" class="error">Ingresá un tiempo válido en formato mm:ss. Ejemplo: 5:00</div>
+      </div>
+    </section>
+
+    <section class="summary">
+      <div class="card mini">
+        <span>VAM ingresada</span>
+        <strong id="vamDisplay">5:00</strong>
+      </div>
+      <div class="card mini">
+        <span>Segundos base</span>
+        <strong id="secondsDisplay">300</strong>
+      </div>
+      <div class="card mini">
+        <span>Zonas calculadas</span>
+        <strong>5</strong>
+      </div>
+    </section>
+
+    <section class="card table-card">
+      <div class="table-title">
+        <h2>Resultados por zona:</h2>
+      <!--  <div class="formula">Fórmula: ritmo zona = VAM x (2 - porcentaje)</div> -->
+      </div>
+
+      <div id="zones" class="zones" aria-live="polite"></div>
+    </section>
+
+    <section class="card notes">
+      <div>
+        <h3>Cálculo de Velocidad Aeróbica Máxima (VAM) </h3>
+        <p>Correr 2 km al máximo esfuerzo y usar el ritmo promedio obtenido como referencia de VAM.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const zones = [
+      {
+        id: 1,
+        percent: 0.55,
+        label: "Zona 1 - Regenerativo",
+        description: "Recuperación",
+        className: "zone-1"
+      },
+      {
+        id: 2,
+        percent: 0.65,
+        label: "Zona 2 - Lipolítico",
+        description: "42K suave / Ultra",
+        className: "zone-2"
+      },
+      {
+        id: 3,
+        percent: 0.75,
+        label: "Zona 3 - Glucolítico",
+        description: "21K suave / 42K fuerte",
+        className: "zone-3"
+      },
+      {
+        id: 4,
+        percent: 0.85,
+        label: "Zona 4 - Mixta Extensiva",
+        description: "10K / 21K fuerte",
+        className: "zone-4"
+      },
+      {
+        id: 5,
+        percent: 0.95,
+        label: "Zona 5 - Mixta Intensiva",
+        description: "5K / 4000mts / 3000mts",
+        className: "zone-5"
+      }
+    ];
+
+    const input = document.getElementById("vamInput");
+    const resetBtn = document.getElementById("resetBtn");
+    const error = document.getElementById("error");
+    const zonesContainer = document.getElementById("zones");
+    const vamDisplay = document.getElementById("vamDisplay");
+    const secondsDisplay = document.getElementById("secondsDisplay");
+
+    function parsePace(value) {
+      const clean = value.trim();
+      const match = clean.match(/^(\d{1,2}):([0-5]\d)$/);
+      if (!match) return null;
+
+      const minutes = Number(match[1]);
+      const seconds = Number(match[2]);
+      const totalSeconds = minutes * 60 + seconds;
+
+      if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return null;
+      return totalSeconds;
+    }
+
+    function formatPace(totalSeconds) {
+      const wholeSeconds = Math.floor(totalSeconds);
+      const minutes = Math.floor(wholeSeconds / 60);
+      const seconds = wholeSeconds % 60;
+
+      return `${minutes}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function render() {
+      const baseSeconds = parsePace(input.value);
+
+      if (!baseSeconds) {
+        error.style.display = "block";
+        return;
+      }
+
+      error.style.display = "none";
+      localStorage.setItem("vam-atleta", input.value.trim());
+
+      vamDisplay.textContent = formatPace(baseSeconds);
+      secondsDisplay.textContent = `${baseSeconds}`;
+
+      zonesContainer.innerHTML = zones.map(zone => {
+        const paceSeconds = baseSeconds * (2 - zone.percent);
+        return `
+          <article class="zone ${zone.className}">
+            <div>
+              <div class="zone-top">
+                <div class="zone-name">${zone.label}</div>
+                <div class="percent">${Math.round(zone.percent * 100)}%</div>
+              </div>
+                <div class="seconds">${Math.floor(paceSeconds)} segundos</div>
+            </div>
+            <div>
+              <div class="pace">${formatPace(paceSeconds)}</div>
+              <div class="unit">min/km</div>
+              <div class="zone-description">${zone.description}</div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    input.addEventListener("input", render);
+
+    resetBtn.addEventListener("click", () => {
+      input.value = "5:00";
+      render();
+      input.focus();
+    });
+
+    const saved = localStorage.getItem("vam-atleta");
+    if (saved) input.value = saved;
+
+    render();
+  </script>
+</body>
+</html>
