@@ -148,6 +148,14 @@
       transform: translateY(-1px);
     }
 
+    .reset-btn {
+      background: #6b7280;
+    }
+
+    .reset-btn:hover {
+      background: #4b5563;
+    }
+
     .error {
       display: none;
       color: #b42318;
@@ -323,8 +331,7 @@
         <div class="eyebrow">Calculadora VAM</div>
         <h1>Zonas de entrenamiento</h1>
         <p class="lead">
-          Ingresá la VAM del atleta en formato mm:ss por kilómetro.
-          La página calcula automáticamente los ritmos para las zonas 1 a 5 usando los porcentajes 55%, 65%, 75%, 85% y 95%.
+            Ingresando el VAM del atleta en mm:ss y devuelve automáticamente los ritmos de zonas 1 a 5, calculados al 55%, 65%, 75%, 85% y 95%.
         </p>
       </div>
 
@@ -335,24 +342,10 @@
         </div>
         <div class="input-row">
           <input id="vamInput" value="5:00" inputmode="text" placeholder="5:00" aria-label="VAM atleta en minutos y segundos" />
-          <button id="resetBtn" type="button">Reset</button>
+          <button id="resetBtn" class="reset-btn" type="button">Reset</button>
+          <button id="calculateBtn" type="button">Calcular</button>
         </div>
         <div id="error" class="error">Ingresá un tiempo válido en formato mm:ss. Ejemplo: 5:00</div>
-      </div>
-    </section>
-
-    <section class="summary">
-      <div class="card mini">
-        <span>VAM ingresada</span>
-        <strong id="vamDisplay">5:00</strong>
-      </div>
-      <div class="card mini">
-        <span>Segundos base</span>
-        <strong id="secondsDisplay">300</strong>
-      </div>
-      <div class="card mini">
-        <span>Zonas calculadas</span>
-        <strong>5</strong>
       </div>
     </section>
 
@@ -413,11 +406,10 @@
     ];
 
     const input = document.getElementById("vamInput");
+    const calculateBtn = document.getElementById("calculateBtn");
     const resetBtn = document.getElementById("resetBtn");
     const error = document.getElementById("error");
     const zonesContainer = document.getElementById("zones");
-    const vamDisplay = document.getElementById("vamDisplay");
-    const secondsDisplay = document.getElementById("secondsDisplay");
 
     function parsePace(value) {
       const clean = value.trim();
@@ -451,9 +443,6 @@
       error.style.display = "none";
       localStorage.setItem("vam-atleta", input.value.trim());
 
-      vamDisplay.textContent = formatPace(baseSeconds);
-      secondsDisplay.textContent = `${baseSeconds}`;
-
       zonesContainer.innerHTML = zones.map(zone => {
         const paceSeconds = baseSeconds * (2 - zone.percent);
         return `
@@ -475,7 +464,13 @@
       }).join("");
     }
 
-    input.addEventListener("input", render);
+    calculateBtn.addEventListener("click", render);
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        render();
+      }
+    });
 
     resetBtn.addEventListener("click", () => {
       input.value = "5:00";
